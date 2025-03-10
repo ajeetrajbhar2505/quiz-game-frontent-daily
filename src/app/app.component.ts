@@ -31,7 +31,6 @@ export class AppComponent {
     }
     this.http.post('http://localhost:5000/api/payments/create-order', requesDetails).subscribe((data: any) => {
       this.transaction = data['transaction']
-      debugger
       this.payWithRazor(this.transaction);
     }
     )
@@ -40,9 +39,11 @@ export class AppComponent {
   verifyPayment(response: any) {
     let requestDetails = {
       ...response,
-      transaction_id : this.transaction._id,
+      transaction_id: this.transaction._id,
       userId: this.transaction.user,
     };
+
+    console.log({ requestDetails });
     this.http.post('http://localhost:5000/api/payments/verify-payment', requestDetails).subscribe(data => {
       console.log(data);
 
@@ -73,11 +74,18 @@ export class AppComponent {
     };
     options.handler = ((response: any, error: any) => {
       options.response = response;
-      this.verifyPayment(response)
+      this.verifyPayment({
+        ...response,
+        status: 'Success',
+        description: 'Reward earned from quiz.'
+      })
     });
     options.modal.ondismiss = (() => {
       // handle the case when user closes the form while transaction is in progress
-      console.log('Transaction cancelled.');
+      this.verifyPayment({
+        status: 'Failed',
+        description: 'Transaction cancelled.'
+      })
     });
     const rzp = new this.winRef.nativeWindow.Razorpay(options);
     rzp.open();
